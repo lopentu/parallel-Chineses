@@ -32,8 +32,11 @@ class SimpleNB():
             tag_obj['prob'] = tag_obj['count'] / len(data)
 
             # calc P(w|c), with add-one smoothing
-            for word, word_obj in tag_obj['words'].items():
-                word_obj['prob'] = (word_obj['count'] + 1) / (tag_obj['nb_word'] + self.nb_vocab)
+            word_dict = tag_obj['words']
+            for word in self.vocabs:
+                if word not in word_dict:
+                    word_dict[word] = {'count': 0}
+                word_dict[word]['prob'] = (word_dict[word]['count'] + 1) / (tag_obj['nb_word'] + self.nb_vocab)
 
     def predict(self, data):
         predictions = []
@@ -46,9 +49,7 @@ class SimpleNB():
                 logprob = log(tag_obj['prob'])
 
                 for word in text:
-                    if word not in tag_obj['words']:
-                        logprob += log(1 / (tag_obj['nb_word'] + self.nb_vocab))
-                    else:
+                    if word in tag_obj['words']:
                         logprob += log(tag_obj['words'][word]['prob'])
 
                 if logprob > max_logprob:
