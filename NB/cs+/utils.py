@@ -9,7 +9,7 @@ def read_csvdir(dirname, tokenize=True):
     # Arguments
         dirname: the path of directory which contains all *.csv files
         tokenize: tokenize sentences or not
-    
+
     # Returns:
         a list of tuples like, (tag, text)
     """
@@ -24,7 +24,7 @@ def read_csvdir(dirname, tokenize=True):
             continue
         df = pd.concat([df, csv_df[['tag', 'text']]], ignore_index=True)
 
-    # data are tokenized with 'dict.txt.big' by jieba 
+    # data are tokenized with 'dict.txt.big' by jieba
     # cs+/
     # ├── dict.txt.big (must be in the same dir)
     # └── utils.py
@@ -44,13 +44,25 @@ def sep_train_test(lst, ratio=0.1):
     # Arguments
         lst: any list-like object
         ratio: the ratio of test data to all data
-    
+
     # Returns
         (list_of_training_data, list_of_test_data)
     """
     shuffle(lst)
     thred = int(len(lst) * ratio)
     return lst[thred:], lst[:thred]
+
+
+def accuracy(gold, pred):
+    """
+    # Arguments
+        gold: list of gold labels
+        pred: list of predicted labels
+
+    # Returns
+        accuracy
+    """
+    return sum(1 for x, y in zip(gold, pred) if x == y) / len(pred)
 
 
 if __name__ == '__main__':
