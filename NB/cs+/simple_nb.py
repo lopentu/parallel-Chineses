@@ -6,28 +6,26 @@ class SimpleNB():
     def __init__(self):
         self.classes = {}
         self.nb_class = 0
-        self.vocabs = {}
+        self.vocabs = set()
         self.nb_vocab = 0
 
-    def count(self, data):
+    def train(self, data):
         for tag, text in data:
             # count tags
             if tag not in self.classes:
                 self.classes[tag] = {'count': 0, 'words': {}, 'nb_word': 0}
-                self.nb_class += 1
             self.classes[tag]['count'] += 1
 
             # count words
             for word in text:
-                if word not in self.vocabs:
-                    self.vocabs[word] = 1
+                self.vocabs.add(word)
                 if word not in self.classes[tag]['words']:
                     self.classes[tag]['words'][word] = {'count': 0}
                 self.classes[tag]['words'][word]['count'] += 1
                 self.classes[tag]['nb_word'] += 1
 
-        # count |V|
-        self.nb_vocab = len(self.vocabs)
+        self.nb_vocab = len(self.vocabs) # count |V|
+        self.nb_class = len(self.classes) # count |C|
 
         for tag, tag_obj in self.classes.items():
             # calc P(c)
@@ -74,7 +72,7 @@ if __name__ == '__main__':
     print('# of test data     =', len(test_arr))
 
     nb = SimpleNB()
-    nb.count(train_arr)
+    nb.train(train_arr)
     preds = nb.predict(test_X)
 
     print('=> accuracy =', accuracy(test_Y, preds))
