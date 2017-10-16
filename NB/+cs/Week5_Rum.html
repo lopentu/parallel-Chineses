@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8" />
-<title>Week5_Sean</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>Language_dectection_using_NB_for_ZH_subtitles</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
 
 <style type="text/css">
@@ -11773,77 +11773,14 @@ div#notebook {
 
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[1]:</div>
+<div class="prompt input_prompt">In&nbsp;[57]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="o">%</span><span class="k">load_ext</span> autoreload
-<span class="o">%</span><span class="k">autoreload</span> 2
-<span class="o">%</span><span class="k">matplotlib</span> inline
-</pre></div>
-
-</div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[2]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">re</span>
-<span class="kn">import</span> <span class="nn">csv</span>
-<span class="kn">import</span> <span class="nn">glob</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="k">import</span> <span class="n">train_test_split</span>
+<span class="kn">from</span> <span class="nn">sklearn.feature_extraction.text</span> <span class="k">import</span> <span class="n">CountVectorizer</span><span class="p">,</span> <span class="n">TfidfTransformer</span>
+<span class="kn">from</span> <span class="nn">sklearn.naive_bayes</span> <span class="k">import</span> <span class="n">MultinomialNB</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">jieba</span>
-<span class="c1"># LingPlus is available from https://github.com/seantyh/LingPlus</span>
-<span class="kn">from</span> <span class="nn">LingPlus</span> <span class="k">import</span> <span class="n">nb</span>
-
-<span class="kn">from</span> <span class="nn">sklearn.feature_extraction.text</span> <span class="k">import</span> <span class="n">CountVectorizer</span>
-<span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="k">import</span> <span class="n">LabelBinarizer</span>
-<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="k">import</span> <span class="n">train_test_split</span>
-<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="k">import</span> <span class="n">accuracy_score</span><span class="p">,</span> <span class="n">recall_score</span><span class="p">,</span> <span class="n">precision_score</span><span class="p">,</span> <span class="n">f1_score</span>
-<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="k">import</span> <span class="n">confusion_matrix</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Content">Content<a class="anchor-link" href="#Content">&#182;</a></h1><h2 id="Preprocessing"><a href="#preproc">Preprocessing</a><a class="anchor-link" href="#Preprocessing">&#182;</a></h2><ul>
-<li>load subtitles</li>
-<li>segmentation and get rid of non-Chinese characters</li>
-</ul>
-<h2 id="Train-Test-Split"><a href="#ttsplit">Train-Test Split</a><a class="anchor-link" href="#Train-Test-Split">&#182;</a></h2><h2 id="Tuning"><a href="#tuning">Tuning</a><a class="anchor-link" href="#Tuning">&#182;</a></h2><ul>
-<li>use k-fold cross validation to tune the smoothing parameter</li>
-</ul>
-<h2 id="Evaluation"><a href="#eval">Evaluation</a><a class="anchor-link" href="#Evaluation">&#182;</a></h2><ul>
-<li>evaluate the model with the selected smoothing on test data</li>
-</ul>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[3]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">load_csv</span><span class="p">(</span><span class="n">fpath</span><span class="p">):</span>
-    <span class="n">fin</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;UTF-8&quot;</span><span class="p">)</span>
-    <span class="n">csvreader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">fin</span><span class="p">)</span>
-    <span class="nb">next</span><span class="p">(</span><span class="n">csvreader</span><span class="p">)</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">csvreader</span><span class="p">:</span>
-        <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">data</span>
 </pre></div>
 
 </div>
@@ -11853,12 +11790,10 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[4]:</div>
+<div class="prompt input_prompt">In&nbsp;[42]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">fpath</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;data/proc/*.csv&quot;</span><span class="p">):</span>    
-    <span class="n">data</span> <span class="o">+=</span> <span class="n">load_csv</span><span class="p">(</span><span class="n">fpath</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;Schindlers_List_1993.csv&quot;</span><span class="p">)</span>
 </pre></div>
 
 </div>
@@ -11868,13 +11803,109 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[5]:</div>
+<div class="prompt input_prompt">In&nbsp;[43]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">nTW</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">data</span> <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;TW&quot;</span><span class="p">])</span>
-<span class="n">nCN</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">data</span> <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;CN&quot;</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;TW items: &quot;</span><span class="p">,</span> <span class="n">nTW</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;CN items: &quot;</span><span class="p">,</span> <span class="n">nCN</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">jieba</span><span class="o">.</span><span class="n">load_userdict</span><span class="p">(</span><span class="s2">&quot;dict.txt.big&quot;</span><span class="p">)</span>
+
+<span class="c1"># data preprocessing</span>
+<span class="k">def</span> <span class="nf">split_into_tokens</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">jieba</span><span class="o">.</span><span class="n">cut</span><span class="p">(</span><span class="n">message</span><span class="p">))</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[44]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;tag&quot;</span><span class="p">],</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[45]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">bow_transformer</span> <span class="o">=</span> <span class="n">CountVectorizer</span><span class="p">(</span><span class="n">split_into_tokens</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[46]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">training_lines_bow</span> <span class="o">=</span> <span class="n">bow_transformer</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span>
+<span class="n">test_lines_bow</span> <span class="o">=</span> <span class="n">bow_transformer</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[47]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">tfidf_transformer</span> <span class="o">=</span> <span class="n">TfidfTransformer</span><span class="p">()</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">training_lines_bow</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[48]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">training_lines_tfidf</span> <span class="o">=</span> <span class="n">tfidf_transformer</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">training_lines_bow</span><span class="p">)</span>
+<span class="n">test_lines_tfidf</span> <span class="o">=</span> <span class="n">tfidf_transformer</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">test_lines_bow</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[49]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">language_detector</span> <span class="o">=</span> <span class="n">MultinomialNB</span><span class="p">()</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">training_lines_tfidf</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[51]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># this is really low. Did I do something wrong???</span>
+
+<span class="n">language_detector</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">test_lines_tfidf</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span>
 </pre></div>
 
 </div>
@@ -11887,492 +11918,15 @@ div#notebook {
 
 <div class="output_area">
 
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>TW items:  6572
-CN items:  7049
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p><a id="preproc"></a></p>
-<h1 id="Preprocess-data">Preprocess data<a class="anchor-link" href="#Preprocess-data">&#182;</a></h1>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[6]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">jieba</span><span class="o">.</span><span class="n">set_dictionary</span><span class="p">(</span><span class="s2">&quot;data/as_jieba.txt&quot;</span><span class="p">)</span>
-<span class="n">san_pat</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;[</span><span class="se">\u3400</span><span class="s2">-</span><span class="se">\u9fff\uf900</span><span class="s2">-</span><span class="se">\ufaff</span><span class="s2">a-zA-Z0-9]&quot;</span><span class="p">)</span>
-<span class="kn">import</span> <span class="nn">pdb</span>
-<span class="k">def</span> <span class="nf">do_tokenize</span><span class="p">(</span><span class="n">srt_item</span><span class="p">):</span>    
-    <span class="n">srt_tokens</span> <span class="o">=</span> <span class="n">srt_item</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">srt_item</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>        
-        <span class="k">return</span> <span class="n">srt_item</span>
-    <span class="n">tok_iter</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">group</span><span class="p">(),</span> <span class="n">san_pat</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">srt_item</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
-    <span class="n">srt_tokens</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tok_iter</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">srt_tokens</span>
-
-<span class="k">def</span> <span class="nf">do_segment</span><span class="p">(</span><span class="n">srt_item</span><span class="p">):</span>    
-    <span class="n">seg_item</span> <span class="o">=</span> <span class="n">srt_item</span>
-    <span class="n">seg_item</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">jieba</span><span class="o">.</span><span class="n">cut</span><span class="p">(</span><span class="n">srt_item</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
-    <span class="k">return</span> <span class="n">seg_item</span>
-
-<span class="n">srt_data</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">do_tokenize</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
-<span class="n">srt_data</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">do_segment</span><span class="p">,</span> <span class="n">srt_data</span><span class="p">)</span>
-<span class="n">srt_data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">srt_data</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stderr output_text">
-<pre>Building prefix dict from E:\Dropbox\Dropbox\Kyle\LingNLP\Week5\data\as_jieba.txt ...
-Loading model from cache C:\Users\Sean\AppData\Local\Temp\jieba.u819fa9d31ffde37e51acb08492816972.cache
-Loading model cost 0.255 seconds.
-Prefix dict has been built succesfully.
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[7]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">srt_data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">10</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">srt_data</span><span class="p">[</span><span class="mi">1010</span><span class="p">:</span><span class="mi">1020</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">srt_data</span><span class="p">[</span><span class="mi">5010</span><span class="p">:</span><span class="mi">5020</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">srt_data</span><span class="p">[</span><span class="mi">8010</span><span class="p">:</span><span class="mi">8020</span><span class="p">])</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>[[&#39;1&#39;, &#39;TW&#39;, [&#39;銀行&#39;]], [&#39;2&#39;, &#39;TW&#39;, [&#39;現在&#39;, &#39;播放&#39;, &#39;喇叭褲&#39;]], [&#39;3&#39;, &#39;TW&#39;, [&#39;手&#39;, &#39;舉高&#39;]], [&#39;4&#39;, &#39;TW&#39;, [&#39;趴&#39;, &#39;在&#39;, &#39;地&#39;, &#39;上&#39;]], [&#39;5&#39;, &#39;TW&#39;, [&#39;給我&#39;, &#39;趴&#39;, &#39;在&#39;, &#39;地&#39;, &#39;上&#39;, &#39;趴下&#39;]], [&#39;6&#39;, &#39;TW&#39;, [&#39;趴下&#39;, &#39;不準動&#39;]], [&#39;7&#39;, &#39;TW&#39;, [&#39;快&#39;]], [&#39;8&#39;, &#39;TW&#39;, [&#39;快點&#39;]], [&#39;9&#39;, &#39;TW&#39;, [&#39;通通&#39;, &#39;不準動&#39;]], [&#39;10&#39;, &#39;TW&#39;, [&#39;趴下&#39;]]]
-[[&#39;1011&#39;, &#39;TW&#39;, [&#39;他&#39;, &#39;在&#39;, &#39;98&#39;, &#39;年&#39;, &#39;逮過&#39;, &#39;我&#39;]], [&#39;1012&#39;, &#39;TW&#39;, [&#39;你們&#39;, &#39;打炮&#39;, &#39;不&#39;, &#39;戴套&#39;, &#39;是&#39;, &#39;你&#39;, &#39;傢&#39;, &#39;的&#39;, &#39;事&#39;]], [&#39;1013&#39;, &#39;TW&#39;, [&#39;要是&#39;, &#39;有&#39;, &#39;人&#39;, &#39;想&#39;, &#39;幹掉&#39;, &#39;我&#39;, &#39;我會&#39;, &#39;抓狂&#39;]], [&#39;1014&#39;, &#39;TW&#39;, [&#39;抓住&#39;, &#39;他&#39;]], [&#39;1015&#39;, &#39;TW&#39;, [&#39;寶貝&#39;, &#39;別&#39;, &#39;讓&#39;, &#39;他&#39;, &#39;跑&#39;, &#39;瞭&#39;]], [&#39;1016&#39;, &#39;TW&#39;, [&#39;快想&#39;, &#39;辦法&#39;]], [&#39;1017&#39;, &#39;TW&#39;, [&#39;媽&#39;, &#39;的&#39;]], [&#39;1018&#39;, &#39;TW&#39;, [&#39;載&#39;, &#39;我們&#39;, &#39;離開&#39;, &#39;快&#39;, &#39;閃&#39;]], [&#39;1019&#39;, &#39;TW&#39;, [&#39;我們&#39;, &#39;走&#39;, &#39;快點&#39;]], [&#39;1020&#39;, &#39;TW&#39;, [&#39;龍舌蘭&#39;]]]
-[[&#39;516&#39;, &#39;CN&#39;, [&#39;我們&#39;, &#39;能&#39;, &#39;有&#39;, &#39;今天&#39;, &#39;這樣&#39;, &#39;的&#39;, &#39;成績&#39;, &#39;最&#39;, &#39;主要&#39;, &#39;是&#39;, &#39;因&#39;, &#39;爲&#39;]], [&#39;517&#39;, &#39;CN&#39;, [&#39;對公&#39;, &#39;衆&#39;, &#39;而言&#39;, &#39;我們&#39;, &#39;是&#39;, &#39;不&#39;, &#39;存在&#39;, &#39;的&#39;]], [&#39;518&#39;, &#39;CN&#39;, [&#39;如果&#39;, &#39;這個&#39;, &#39;視頻&#39;, &#39;暗示&#39;, &#39;甚至&#39;, &#39;直接&#39;, &#39;提到&#39;, &#39;了&#39;, &#39;我們&#39;]], [&#39;519&#39;, &#39;CN&#39;, [&#39;爲&#39;, &#39;了&#39;, &#39;所有&#39;, &#39;客戶&#39;, &#39;的&#39;, &#39;利益&#39;, &#39;考慮&#39;]], [&#39;520&#39;, &#39;CN&#39;, [&#39;我&#39;, &#39;就&#39;, &#39;不能&#39;, &#39;讓&#39;, &#39;它&#39;, &#39;公之&#39;, &#39;於&#39;, &#39;衆&#39;]], [&#39;521&#39;, &#39;CN&#39;, [&#39;你&#39;, &#39;以前&#39;, &#39;叮囑&#39;, &#39;我&#39;, &#39;辦事&#39;, &#39;要&#39;, &#39;走&#39;, &#39;正常&#39;, &#39;程序&#39;]], [&#39;522&#39;, &#39;CN&#39;, [&#39;佐布里斯特&#39;, &#39;先生&#39;, &#39;像是&#39;, &#39;什麼&#39;, &#39;正常&#39;, &#39;客戶&#39;, &#39;嗎&#39;]], [&#39;523&#39;, &#39;CN&#39;, [&#39;這個麼&#39;, &#39;這也&#39;, &#39;是&#39;, &#39;感嘆&#39;, &#39;罷了&#39;, &#39;把&#39;, &#39;視頻&#39;, &#39;拿給&#39;, &#39;我&#39;]], [&#39;524&#39;, &#39;CN&#39;, [&#39;意大利&#39;, &#39;佛羅倫薩&#39;, &#39;馬基&#39;, &#39;雅維利&#39;, &#39;大道&#39;, &#39;上午&#39;, &#39;836&#39;]], [&#39;525&#39;, &#39;CN&#39;, [&#39;維奇&#39;, &#39;奧宮&#39;, &#39;五百&#39;, &#39;人&#39;, &#39;大廳&#39;, &#39;裏&#39;, &#39;有&#39;, &#39;幅&#39;, &#39;著名&#39;, &#39;的&#39;, &#39;壁畫&#39;]]]
-[[&#39;1963&#39;, &#39;CN&#39;, [&#39;你&#39;, &#39;當時&#39;, &#39;害怕&#39;, &#39;嗎&#39;]], [&#39;1964&#39;, &#39;CN&#39;, [&#39;我&#39;, &#39;肯定&#39;, &#39;在&#39;, &#39;你&#39;, &#39;的&#39;, &#39;老朋友&#39;, &#39;蜘蛛&#39;, &#39;俠&#39;]], [&#39;1965&#39;, &#39;CN&#39;, [&#39;出現&#39;, &#39;在&#39;, &#39;那台&#39;, &#39;電梯&#39;, &#39;里&#39;, &#39;時&#39;, &#39;你&#39;, &#39;很&#39;, &#39;高興&#39;, &#39;對&#39;, &#39;嗎&#39;]], [&#39;1966&#39;, &#39;CN&#39;, [&#39;是&#39;, &#39;的&#39;, &#39;其實&#39;, &#39;我並&#39;, &#39;沒有&#39;, &#39;上去&#39;]], [&#39;1967&#39;, &#39;CN&#39;, [&#39;我&#39;, &#39;在&#39;, &#39;樓下&#39;, &#39;目睹&#39;, &#39;了&#39;, &#39;那&#39;, &#39;一切&#39;]], [&#39;1968&#39;, &#39;CN&#39;, [&#39;沒錯&#39;]], [&#39;1969&#39;, &#39;CN&#39;, [&#39;他&#39;, &#39;那天&#39;, &#39;在&#39;, &#39;那裡&#39;, &#39;真是&#39;, &#39;件&#39;, &#39;幸事&#39;]], [&#39;1970&#39;, &#39;CN&#39;, [&#39;蜘蛛&#39;, &#39;俠&#39;, &#39;真是&#39;, &#39;了不起&#39;]], [&#39;1971&#39;, &#39;CN&#39;, [&#39;爸爸&#39;, &#39;綠燈&#39;, &#39;亮&#39;, &#39;了&#39;]], [&#39;1972&#39;, &#39;CN&#39;, [&#39;我們&#39;, &#39;到&#39;, &#39;了&#39;, &#39;你們&#39;, &#39;該&#39;, &#39;下車&#39;, &#39;了&#39;]]]
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[8]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">vec</span> <span class="o">=</span> <span class="n">CountVectorizer</span><span class="p">(</span><span class="n">analyzer</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span> <span class="n">tokenizer</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">)</span> 
-<span class="n">lbin</span> <span class="o">=</span> <span class="n">LabelBinarizer</span><span class="p">()</span>
-
-<span class="n">tag_vec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">srt_data</span><span class="p">])</span>
-<span class="n">lbin</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">tag_vec</span><span class="p">)</span>
-<span class="n">text_mat</span> <span class="o">=</span> <span class="n">vec</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">srt_data</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Vocabulary generated by CountVectorizer: &quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">vec</span><span class="o">.</span><span class="n">vocabulary_</span><span class="p">))</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>Vocabulary generated by CountVectorizer:  9313
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p><a id="ttsplit"></a></p>
-<h1 id="Train-Test-data-split">Train-Test data split<a class="anchor-link" href="#Train-Test-data-split">&#182;</a></h1>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[9]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">train_x</span><span class="p">,</span> <span class="n">test_x</span><span class="p">,</span> <span class="n">train_y</span><span class="p">,</span> <span class="n">test_y</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">text_mat</span><span class="p">,</span> <span class="n">tag_vec</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Verify numbers of tag classes are comparable: &quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;train TW: </span><span class="si">%.2f</span><span class="s2">, CN: </span><span class="si">%.2f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">((</span><span class="n">train_y</span><span class="o">==</span><span class="s2">&quot;TW&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">nTW</span><span class="p">,</span> <span class="p">(</span><span class="n">train_y</span><span class="o">==</span><span class="s2">&quot;CN&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">nCN</span><span class="p">))</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>Verify numbers of tag classes are comparable: 
-train TW: 0.80, CN: 0.80
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p><a id="tuning"></a></p>
-<h1 id="K-Fold(Stratified)-model-tuning">K-Fold(Stratified) model tuning<a class="anchor-link" href="#K-Fold(Stratified)-model-tuning">&#182;</a></h1>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[10]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">sm_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span><span class="mf">0.5</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">]</span>
-<span class="n">sm_acc</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">sm_alpha</span> <span class="ow">in</span> <span class="n">sm_list</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--- Smooth alpha: </span><span class="si">%f</span><span class="s2"> ---&quot;</span> <span class="o">%</span> <span class="n">sm_alpha</span><span class="p">)</span>    
-    <span class="n">acc</span> <span class="o">=</span> <span class="n">nb</span><span class="o">.</span><span class="n">smooth_selection</span><span class="p">(</span><span class="n">sm_alpha</span><span class="p">,</span> <span class="n">train_x</span><span class="p">,</span> <span class="n">train_y</span><span class="p">)</span>
-    <span class="n">sm_acc</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">acc</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>--- Smooth alpha: 0.000000 ---
-Accuracy average: 0.5896
---- Smooth alpha: 0.100000 ---
-Accuracy average: 0.6255
---- Smooth alpha: 0.500000 ---
-Accuracy average: 0.6311
---- Smooth alpha: 1.000000 ---
-Accuracy average: 0.6354
---- Smooth alpha: 2.000000 ---
-Accuracy average: 0.6373
---- Smooth alpha: 4.000000 ---
-Accuracy average: 0.6326
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[11]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sm_list</span><span class="p">,</span> <span class="n">sm_acc</span><span class="p">,</span> <span class="s1">&#39;-o&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt output_prompt">Out[11]:</div>
+<div class="prompt output_prompt">Out[51]:</div>
 
 
 
 
 <div class="output_text output_subarea output_execute_result">
-<pre>[&lt;matplotlib.lines.Line2D at 0x1ea2819f400&gt;]</pre>
+<pre>0.61349693251533743</pre>
 </div>
 
-</div>
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-
-
-<div class="output_png output_subarea ">
-<img src="data:image/png;base64,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
-gg==
-"
->
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p><a id="eval"></a></p>
-<h1 id="Model-Evaluation-with-Test-Data">Model Evaluation with Test Data<a class="anchor-link" href="#Model-Evaluation-with-Test-Data">&#182;</a></h1>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[12]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># model training</span>
-<span class="n">enc_train_y</span> <span class="o">=</span> <span class="n">lbin</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">train_y</span><span class="p">)</span>
-<span class="n">pY</span> <span class="o">=</span> <span class="n">enc_train_y</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">enc_train_y</span><span class="p">)</span>
-<span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span><span class="o">.</span><span class="n">as_default</span><span class="p">()</span> <span class="k">as</span> <span class="n">g</span><span class="p">:</span>
-    <span class="n">model</span> <span class="o">=</span> <span class="n">nb</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">train_x</span><span class="p">,</span> <span class="n">enc_train_y</span><span class="p">,</span>
-                    <span class="n">pY_prior</span><span class="o">=</span><span class="n">pY</span><span class="p">,</span> <span class="n">smooth_alpha</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-
-<span class="c1"># model testing</span>
-<span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span><span class="o">.</span><span class="n">as_default</span><span class="p">()</span> <span class="k">as</span> <span class="n">g</span><span class="p">:</span>
-    <span class="n">test_pred_vec</span> <span class="o">=</span> <span class="n">nb</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">test_x</span><span class="p">)</span>
-    
-<span class="n">test_pred_y</span> <span class="o">=</span> <span class="n">lbin</span><span class="o">.</span><span class="n">inverse_transform</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">test_pred_vec</span><span class="p">))</span>
-<span class="n">acc</span> <span class="o">=</span> <span class="n">accuracy_score</span><span class="p">(</span><span class="n">test_y</span><span class="p">,</span> <span class="n">test_pred_y</span><span class="p">)</span>
-<span class="n">prec</span> <span class="o">=</span> <span class="n">precision_score</span><span class="p">(</span><span class="n">test_y</span><span class="p">,</span> <span class="n">test_pred_y</span><span class="p">,</span> <span class="n">pos_label</span><span class="o">=</span><span class="s2">&quot;TW&quot;</span><span class="p">)</span>
-<span class="n">recall</span> <span class="o">=</span> <span class="n">recall_score</span><span class="p">(</span><span class="n">test_y</span><span class="p">,</span> <span class="n">test_pred_y</span><span class="p">,</span> <span class="n">pos_label</span><span class="o">=</span><span class="s2">&quot;TW&quot;</span><span class="p">)</span>
-<span class="n">f1</span> <span class="o">=</span> <span class="n">f1_score</span><span class="p">(</span><span class="n">test_y</span><span class="p">,</span> <span class="n">test_pred_y</span><span class="p">,</span> <span class="n">pos_label</span><span class="o">=</span><span class="s2">&quot;TW&quot;</span><span class="p">)</span>
-    
-<span class="nb">print</span><span class="p">(</span><span class="n">lbin</span><span class="o">.</span><span class="n">classes_</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Accuracy: </span><span class="si">%.2f</span><span class="s2">, Precision: </span><span class="si">%.2f</span><span class="s2">, Recall: </span><span class="si">%.2f</span><span class="s2">, F1: </span><span class="si">%.2f</span><span class="s2">&quot;</span> 
-      <span class="o">%</span> <span class="p">(</span><span class="n">acc</span><span class="p">,</span> <span class="n">prec</span><span class="p">,</span> <span class="n">recall</span><span class="p">,</span> <span class="n">f1</span><span class="p">))</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>[&#39;CN&#39; &#39;TW&#39;]
-Accuracy: 0.64, Precision: 0.68, Recall: 0.52, F1: 0.59
-</pre>
-</div>
 </div>
 
 </div>
@@ -12381,51 +11935,16 @@ Accuracy: 0.64, Precision: 0.68, Recall: 0.52, F1: 0.59
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[13]:</div>
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">confusion_matrix</span><span class="p">(</span><span class="n">test_y</span><span class="p">,</span> <span class="n">test_pred_y</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span> 
 </pre></div>
 
 </div>
 </div>
 </div>
 
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt output_prompt">Out[13]:</div>
-
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre>array([[1046,  335],
-       [ 643,  701]], dtype=int64)</pre>
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Discussion">Discussion<a class="anchor-link" href="#Discussion">&#182;</a></h1><ul>
-<li>Final model has accuracy of 64%, F1-score is 0.59.</li>
-<li>Performance may be better if using tf-idf when generating word features.</li>
-<li>Segmentation was still an issue, since no special care was taken when segmenting China subtitles.</li>
-<li>Word encoder in preprocessing step used whole data to calculate vocabulary. It should honor the train-test data split next time, where vocabulary is only built from training data.</li>
-</ul>
-
-</div>
-</div>
 </div>
     </div>
   </div>
