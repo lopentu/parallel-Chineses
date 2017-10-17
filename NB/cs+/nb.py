@@ -18,7 +18,7 @@ def tag_text(all_MEDS, LIMIT = 0):
 
     output_data = []
     for data in all_MEDS:
-        if float(data[0]) <= LIMIT:
+        if LIMIT != None and float(data[0]) <= LIMIT:
             #discard this line
             continue;
         else:
@@ -40,9 +40,9 @@ if __name__ == '__main__':
         times = 100
     elif (model == 'tfidf'):
         from tfidf_nb import tfidfNB as NB
-        times = 3
+        times = 5
 
-    limits = [0, 0.5, 1, 1.5]
+    limits = [None, 0, 0.5, 1, 1.5]
 
     for limit in limits:
 

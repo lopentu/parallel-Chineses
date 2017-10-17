@@ -40,7 +40,7 @@ def run_jieba(input_file):
         for j in range(len(sentences)):
             sentence = sentences[j]
             #removing letter, number and punc
-            sentence = re.sub("[A-Za-z0-9\<\>\s+\.\!\/_,$%^*(+\"\']+|[+——！，。？、~@#￥%……&*（）：〝〞]+", "", sentence)
+            sentence = re.sub("[A-Za-z0-9\<\>\s+\.\!\/_,$%^*(+\"\']+|[+——！，。？、~@#￥%……&*（）：〝〞♪{\\}]+", "", sentence)
             words = jieba.cut(sentence)
             result = " ".join(words)
             if j == len(sentences) - 1:
@@ -86,15 +86,15 @@ def find_aligned(srt1, srt2):
                                 inew = i + n
                                 jnew = j + m
                                 end = 1;
+                                while i < inew:
+                                    i += 1
+                                    aligned[p - 1][0] += ' ' + simple2tradition(srt1[i][2])
+                                while j < jnew:
+                                    j += 1
+                                    aligned[p - 1][1] += ' ' + srt2[j][2]
                                 break;
                         if end == 1:
                             break;
-                    while i < inew:
-                        i += 1
-                        aligned[p - 1][0] += ' ' + simple2tradition(srt1[i][2])
-                    while j < jnew:
-                        j += 1
-                        aligned[p - 1][1] += ' ' + srt2[j][2]
                 break;
             else:
                 discard = 1
@@ -178,7 +178,8 @@ if __name__ == '__main__':
                 ['./SRT/IC_CN.srt', './SRT/IC_TW.srt'],
                 ['./SRT/IF_CN.srt', './SRT/IF_TW.srt'],
                 ['./SRT/SP_CN.srt', './SRT/SP_TW.srt'],
-                ['./SRT/WO_CN.srt', './SRT/WO_TW.srt']]
+                ['./SRT/WO_CN.srt', './SRT/WO_TW.srt'],
+                ['./SRT/ZO_CN.srt', './SRT/ZO_TW.srt']]
 
     all_MEDS = all_srt_MEDS(srt_list)
     f = open('med.csv', 'w')
