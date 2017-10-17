@@ -4,11 +4,12 @@ import pandas as pd
 from random import shuffle
 
 
-def read_csvdir(dirname, tokenize=True):
+def read_csvdir(dirname, tokenize=True, details=False):
     """
     # Arguments
         dirname: the path of directory which contains all *.csv files
         tokenize: tokenize sentences or not
+        verbose: show read filenames or not
 
     # Returns:
         a list of tuples like, (tag, text)
@@ -23,6 +24,9 @@ def read_csvdir(dirname, tokenize=True):
             print('File: {}, does not contain the required columns.'.format(pname))
             continue
         df = pd.concat([df, csv_df[['tag', 'text']]], ignore_index=True)
+
+        if details:
+            print('Read {} lines from {}'.format(len(csv_df), fname))
 
     # data are tokenized with 'dict.txt.big' by jieba
     # cs+/
