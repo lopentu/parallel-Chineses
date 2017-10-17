@@ -23,9 +23,9 @@ def tag_text(all_MEDS, LIMIT = 0):
             continue;
         else:
             if data[2] != '':
-                output_data.append([0, data[2].split()])
+                output_data.append(['CN', data[2].split()])
             if data[3] != '':
-                output_data.append([1, data[3].split()])
+                output_data.append(['TW', data[3].split()])
     return output_data
 
 

@@ -5,7 +5,7 @@ import numpy as np
 class tfidfNB():
     def __init__(self):
         self.vocabs = set()
-        self.classes = {1:{'vocabs':{}, 'count':0}, 0:{'vocabs':{}, 'count':0}}
+        self.classes = {}
         self.logprior = {}
         self.loglikelyhood = {}
 
@@ -53,6 +53,8 @@ class tfidfNB():
     def train(self, data):
         # calculate tfidf
         for class_name, text in data:
+            if class_name not in self.classes:
+                self.classes[class_name] = { 'vocabs': {}, 'count': 0}
             self.classes[class_name]['count'] += 1
             tfidf_text = tfidfNB.TFIDF(text, data)
             tfidf_dict = {}
@@ -113,7 +115,7 @@ if __name__ == '__main__':
     data_arr = read_csvdir(argv[1])
 
     total = 0
-    times = 100
+    times = 5
     for _ in range(times):
         train_arr, test_arr = sep_train_test(data_arr)
         test_Y, test_X = zip(*test_arr)
@@ -129,4 +131,4 @@ if __name__ == '__main__':
         total += acc
         print('=> accuracy =', acc)
 
-    print('\naccuracy for {} times = {}'.format(times, total / times))
+    print('accuracy for {} times = {}\n'.format(times, total / times))
