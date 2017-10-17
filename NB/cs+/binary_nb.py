@@ -13,7 +13,7 @@ class BinaryNB():
         for class_name, text in data:
             if class_name not in self.classes:
                 self.classes[class_name] = { 'vocabs': {}, 'count': 0, 'nb_word': 0 }
-            self.classes[class_name]['count'] += 1    
+            self.classes[class_name]['count'] += 1
 
             for word in set(text):
                 self.vocabs.add(word)
@@ -22,7 +22,7 @@ class BinaryNB():
                 else:
                     self.classes[class_name]['vocabs'][word] = 1
             self.classes[class_name]['nb_word'] += 1
-        
+
         # calculate logprior
         for class_name, class_value in self.classes.items():
             self.logprior[class_name] = log(class_value['count'] / len(data))
@@ -31,7 +31,7 @@ class BinaryNB():
         for word in self.vocabs:
             if word not in self.loglikelihood:
                 self.loglikelihood[word] = {}
-            
+
             for class_name in self.classes:
                 if word in self.classes[class_name]['vocabs']:
                     self.loglikelihood[word][class_name] = log((self.classes[class_name]['vocabs'][word] + 1) / (self.classes[class_name]['nb_word'] + len(self.vocabs)))
@@ -47,6 +47,9 @@ class BinaryNB():
                 if word in self.vocabs:
                     for class_name in self.classes:
                         total[class_name] += self.loglikelihood[word][class_name]
+                else:
+                    for class_name in self.classes:
+                        total[class_name] += log( 1 / (self.classes[class_name]['nb_word'] + len(self.vocabs)))
 
             max_prob = -inf
             max_class = None
