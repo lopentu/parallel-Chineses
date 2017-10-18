@@ -6,7 +6,7 @@ class SimpleNB():
     def __init__(self):
         self.classes = {}
         self.nb_class = 0
-        self.vocabs = {}
+        self.vocabs = set()
         self.nb_vocab = 0
 
     def train(self, data):
@@ -14,28 +14,29 @@ class SimpleNB():
             # count tags
             if tag not in self.classes:
                 self.classes[tag] = {'count': 0, 'words': {}, 'nb_word': 0}
-                self.nb_class += 1
             self.classes[tag]['count'] += 1
 
             # count words
             for word in text:
-                if word not in self.vocabs:
-                    self.vocabs[word] = 1
+                self.vocabs.add(word)
                 if word not in self.classes[tag]['words']:
                     self.classes[tag]['words'][word] = {'count': 0}
                 self.classes[tag]['words'][word]['count'] += 1
                 self.classes[tag]['nb_word'] += 1
 
-        # count |V|
-        self.nb_vocab = len(self.vocabs)
+        self.nb_vocab = len(self.vocabs) # count |V|
+        self.nb_class = len(self.classes) # count |C|
 
         for tag, tag_obj in self.classes.items():
             # calc P(c)
             tag_obj['prob'] = tag_obj['count'] / len(data)
 
             # calc P(w|c), with add-one smoothing
-            for word, word_obj in tag_obj['words'].items():
-                word_obj['prob'] = (word_obj['count'] + 1) / (tag_obj['nb_word'] + self.nb_vocab)
+            word_dict = tag_obj['words']
+            for word in self.vocabs:
+                if word not in word_dict:
+                    word_dict[word] = {'count': 0}
+                word_dict[word]['prob'] = (word_dict[word]['count'] + 1) / (tag_obj['nb_word'] + self.nb_vocab)
 
     def predict(self, data):
         predictions = []
@@ -48,9 +49,7 @@ class SimpleNB():
                 logprob = log(tag_obj['prob'])
 
                 for word in text:
-                    if word not in tag_obj['words']:
-                        logprob += log(1 / (tag_obj['nb_word'] + self.nb_vocab))
-                    else:
+                    if word in tag_obj['words']:
                         logprob += log(tag_obj['words'][word]['prob'])
 
                 if logprob > max_logprob:
