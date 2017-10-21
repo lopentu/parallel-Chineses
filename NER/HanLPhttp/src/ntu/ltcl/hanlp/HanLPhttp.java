@@ -19,6 +19,12 @@ public class HanLPhttp {
     server.createContext("/translated_name", new TranslatedNameHandler());
     server.createContext("/translated_name/", new TranslatedNameHandler());
 
+    server.createContext("/japanese_name", new JapaneseNameHandler());
+    server.createContext("/japanese_name/", new JapaneseNameHandler());
+
+    server.createContext("/place", new PlaceHandler());
+    server.createContext("/place/", new PlaceHandler());
+
     server.setExecutor(null);
 
     server.start();

@@ -11,10 +11,22 @@ import java.util.stream.Collectors;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
+import com.hankcs.hanlp.HanLP;
+import com.hankcs.hanlp.seg.Segment;
 import com.hankcs.hanlp.seg.common.Term;
 import com.hankcs.hanlp.corpus.tag.Nature;
 
 public abstract class Handler implements HttpHandler {
+  protected static String segmentText(Map<String,String> params, Segment segment, Nature nature) {
+    if (params.get("lang").equals("cht")) {
+      List<Term> termList = segment.seg(HanLP.convertToSimplifiedChinese(params.get("text")));
+      return HanLP.convertToTraditionalChinese(joinWords(termList, nature));
+    } else {
+      List<Term> termList = segment.seg(params.get("text"));
+      return joinWords(termList, nature);
+    }
+  }
+
   protected static String joinWords(List<Term> termList, Nature nature) {
     return termList.stream()
         .filter(term -> term.nature == nature)
