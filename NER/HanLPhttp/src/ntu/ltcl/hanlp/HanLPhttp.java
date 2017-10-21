@@ -8,7 +8,10 @@ import com.sun.net.httpserver.HttpServer;
 public class HanLPhttp {
 
   public static void main(String[] args) throws Exception {
-    HttpServer server = HttpServer.create(new InetSocketAddress(5217), 0);
+    int port = 1234;
+    if (args.length > 0)
+      port = Integer.parseInt(args[0]);
+    HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
 
     server.createContext("/test", new TestHandler());
     server.createContext("/test/", new TestHandler());

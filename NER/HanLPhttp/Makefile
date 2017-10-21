@@ -1,6 +1,7 @@
 # Modify from Makefile author: Joseph Anderson <jtanderson@ratiocaeli.com>
 
-# This is where you specify the necessary source files
+# Default port
+PORT = 1234
 
 # Program packages and files
 #   - The packages should be the path inside your src directory. eg: package1 package2/package3
@@ -57,4 +58,4 @@ clean:
 	rm -rf $(BIN)*
 
 run:
-	java -cp "./:$(BIN):$(LIB):$(JAR)" ntu/ltcl/hanlp/HanLPhttp
+	java -cp "./:$(BIN):$(LIB):$(JAR)" ntu/ltcl/hanlp/HanLPhttp $(PORT)
